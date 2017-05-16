@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Shop</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.1/axios.js"></script>
+  <script src="https://unpkg.com/vue"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+</head>
+
+<body>
+  <div id="app">
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">The Bang Shop</a>
+        </div>
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="#">Home</a></li>
+          <li v-on:click="signOut"><a href="#">Log Out</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div v-for="item in items.catalog">
+      <div class="col-sm-4 col-lg-4 col-md-4">
+        <div class="thumbnail">
+          <img :src="item.img" alt="" />
+          <div class="caption">
+            <h4 class="pull-right">{{item.price}}</h4>
+            <h4><a href="#">{{item.brand}}</a>
+                                    </h4>
+            <p>{{item.description}}</p>
+            <button class="btn btn-basic" type="button" v-on:click="addCart(item)">Add to Cart</button>
+          </div>
+          <div class="ratings">
+            <p class="pull-right">{{item.quantity}} in stock</p>
+            <p>
+              <span v-for="n in item.rating" class="glyphicon glyphicon-star"></span><span v-for="n in 5-item.rating" class="glyphicon glyphicon-star-empty" /></span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <table class="table table-hover table-condensed">
+      <thead>
+        <tr>
+          <th style="width:50%">Cart</th>
+          <th style="width:10%">Price</th>
+          <th style="width:8%">Quantity</th>
+          <th style="width:22%" class="text-center">Subtotal</th>
+          <th style="width:10%"></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr v-for="item in items.cart">
+            <td>
+              <div class="row">
+                <div class="col-sm-4 hidden-xs"><img :src="item.img" alt="..." class="img-responsive" /></div>
+                <div class="col-sm-8">
+                  <h4 class="nomargin">{{item.brand}}</h4>
+                  <p>{{item.description}}</p>
+                </div>
+              </div>
+            </td>
+            <td>{{item.price}}</td>
+            <td>
+              <input type="number" class="form-control text-center" v-model="item.carted" value="1" min="1" :max="item.quantity">
+            </td>
+            <td class="text-center">${{subTotal(item)}}</td>
+            <td class="actions">
+              <button class="btn btn-danger btn-sm" v-on:click="remove(item)">Remove</button>
+            </td>
+          </tr>
+      </tbody>
+      <tfoot>
+        <tr class="visible-xs">
+          <td class="text-center"><strong>Total ${{total()}}</strong></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td colspan="2" class="hidden-xs"></td>
+          <td class="hidden-xs text-center"><strong>Total ${{total()}}</strong></td>
+          <td><a href="#" class="btn btn-success">Checkout <i class="fa fa-angle-right"></i></a></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</body>
+<script>
+  var app = new Vue({
+    el: '#app',
+    data: {
+      items: {
+        catalog: null,
+        cart: []
+      }
+    },
+    created: function() {
+      if(localStorage.getItem('token')===null){
+        location.href="index.html"
+      }
+      axios.get('http://localhost:3000/handphones', {
+        headers: {
+          token: localStorage.getItem('token')
+        }
+      }).then((response) => {
+        this.items.catalog = response.data;
+      }).catch((err) => {
+        console.log(err)
+      })
+    },
+    methods: {
+      signOut: function() {
+        localStorage.removeItem('token')
+        location.href = "index.html"
+      },
+      addCart: function(item){
+        if(this.items.cart.indexOf(item)=== Number(-1)){
+          item.carted=1
+          this.items.cart.push(item)
+        }
+      },
+      subTotal: function(item){
+        let subtotal = Number(item.price.slice(1))*item.carted;
+        return subtotal.toFixed(2)
+      },
+      total: function(){
+        let arr=this.items.cart
+        let newArr=[]
+        for(let i=0; i<arr.length; i++){
+          newArr.push(Number(this.subTotal(arr[i])))
+        }
+        var newarr= newArr.reduce(function(a, b) { return a + b; }, 0);
+        return newarr.toFixed(2)
+      },
+      remove: function(item){
+        this.items.cart.splice(this.items.cart.indexOf(item), 1)
+      }
+    }
+  })
+</script>
+
+</html>
